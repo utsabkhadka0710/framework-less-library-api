@@ -26,37 +26,26 @@ def format_books(rows):
             "published_year":r[3],
             "author":{
                 "author_id": r[4],
-                "author_name": r[5],
-                "author_email": r[6]
+                "author_name": r[5]
             }
          } for r in rows
     ]
 
-def single_book_handler(query, params):
-
-    book_id = params.get("id")
-
-    
-
-
-    return 200, {
-        "book_id": book_id
-    }
 
 def books_handler(query, params=None):
     
     if params:
         id = params.get("id")
-        print(type(id), id)
         row = queries.get_books(id=id)
         if row:
+            print(row)
             data = format_books([row])
             return 200, {
                 "status": "success",
                 "data": data
             }
         return 404, {
-            "error": "Not found",
+            "error": "Not found"
         }
         
     
@@ -67,6 +56,8 @@ def books_handler(query, params=None):
     order = query.get("order",["desc"])[0]
 
     rows = queries.get_books(title,author,year,sort,order)
+
+    print(rows)
     data = format_books(rows)
     
     return 200, {"status":"success", "data":data}
@@ -117,7 +108,7 @@ def create_book_handler(data):
             "author_id": rows[4]
         }
 
-        return 201, {
+        return 200, {
             "status": "success",
             "message": book
         }
@@ -129,3 +120,19 @@ def create_book_handler(data):
             "message": "could not create a book"
         }
 
+def delete_book_handler(params):
+    id = params.get("id")
+    row = queries.delete_book(id)
+
+    if row:
+        data = format_books([row])
+        return 200, {
+            "status": "success",
+            "data": data
+        }
+    return 404, {
+            "error": f"book with id: {id} not found",
+        }
+
+
+    

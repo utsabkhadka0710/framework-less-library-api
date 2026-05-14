@@ -9,15 +9,25 @@ router = Router()
 router.add("GET","/",home.home_handler)
 router.add("GET","/authors",authors.authors_handler)
 router.add("GET","/books",books.books_handler)
+router.add("GET", "/books/<id>",books.books_handler)
+router.add("GET", "/authors/<id>",authors.authors_handler)
 
 router.add("POST","/authors",authors.create_author_handler)
 router.add("POST","/books",books.create_book_handler)
 
-router.add("GET", "/books/<id>",books.books_handler)
-router.add("GET", "/authors/<id>",authors.authors_handler)
+router.add("DELETE","/authors/<id>",authors.delete_author_handler)
+router.add("DELETE","/books/<id>",books.delete_book_handler)
+
 
 
 class MyHandler(BaseHTTPRequestHandler):
+
+    def response_sender(self,status_code=404,response_data= {"error":"Not found"}):
+        self.send_response(status_code)
+        self.send_header("Content-Type","application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(response_data, indent=4).encode())
+
     def do_GET(self):
         print("Request received", self.path)
 
@@ -37,12 +47,11 @@ class MyHandler(BaseHTTPRequestHandler):
             print("Error:", e)
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        self.send_response(status_code)
-        self.send_header("Content-Type","application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(response_data, indent=4).encode())
+        self.response_sender(status_code,response_data)
 
     def do_POST(self):
+        print("Request received ",self.path)
+        
         parsed = urlparse(self.path)
         path = parsed.path
             
@@ -53,6 +62,7 @@ class MyHandler(BaseHTTPRequestHandler):
             data = json.loads(body)
         except:
             data = {}
+
         handler = router.resolve("POST",path)[0]
 
         try:
@@ -65,14 +75,32 @@ class MyHandler(BaseHTTPRequestHandler):
             print("Error:", e)
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        self.send_response(status_code)
-        self.send_header("Content-Type","application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(response_data, indent=4).encode())
+        self.response_sender(status_code,response_data)
 
     def do_DELETE(self):
+
+        print("Request received ",self.path)
+
         parsed = urlparse(self.path)
         path = parsed.path
+
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
+
+        handler, params = router.resolve("DELETE",path)
+
+        try:
+            if handler:
+                status_code, response_data= handler(params)
+            else:
+                status_code, response_data = 404, {"error": "Not found"}
+
+        except Exception as e:
+            print("Error: ", e)
+            status_code, response_data = 500, {"error": "Internal server error"}
+    
+        self.response_sender(status_code, response_data)
+        
 
 
 

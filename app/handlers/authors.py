@@ -6,9 +6,13 @@ def is_valid_email(email):
 
 
 
-def format_authors(rows):
+def format_authors(author_row):
+
     return [
-        {"id": r[0],"name": r[1], "email": r[2]} for r in rows
+        {
+            "id": r[0],
+            "name": r[1]
+        } for r in author_row
     ]
 
 
@@ -17,7 +21,7 @@ def authors_handler(query, params=None):
     if params:
         id = params.get("id")
         row = queries.get_authors(id=id)
-        print(row)
+
         if row:
             data = format_authors([row])
             return 200, {
@@ -32,9 +36,8 @@ def authors_handler(query, params=None):
     name = query.get("name",[None])[0]
     sort = query.get("sort",[None])[0]
     order = query.get("order",["desc"])[0]
-    email = query.get("email",[None])[0]
 
-    rows = queries.get_authors(name,email,sort,order)
+    rows = queries.get_authors(name,sort,order)
     data = format_authors(rows)
     return 200, {
         "status":"success",
@@ -78,4 +81,34 @@ def create_author_handler(data):
             "status": "error",
             "message": "Email already exists"
         }
+
+def delete_author_handler(params):
+    id = params.get("id")
+    author_row, books_rows = queries.delete_author(id)
+
+    if not author_row:
+        return 404, {
+            "error": f"author with id:{id} not found"
+        }
+    
+    author_data = format_authors([author_row])
+
+    deleted_book_data = [
+        {
+            "id": r[0],
+            "title": r[1],
+            "isbn": r[2],
+            "published_year": r[3]
+        } for r in ([books_rows] if len(books_rows)==1 else books_rows)
+    ]
+
+    data = [
+        {"deleted_author":author_data},
+        {"deleted_book": deleted_book_data}
+         ]
+    
+    return 200, {
+        "status": "success",
+        "data": data
+    }
     

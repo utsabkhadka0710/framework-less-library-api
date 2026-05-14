@@ -16,11 +16,11 @@ def author_exists(author_id):
 
 
 
-def get_authors(name=None, email=None, sort=None, order="desc",id=None):
+def get_authors(name=None, sort=None, order="desc",id=None):
     conn = get_connection()
     cur = conn.cursor()
 
-    base_query = "SELECT id, name, email FROM authors"
+    base_query = "SELECT id, name FROM authors"
 
     if id:
         base_query += " WHERE id = %s"
@@ -39,10 +39,6 @@ def get_authors(name=None, email=None, sort=None, order="desc",id=None):
     if name:
         base_query += " WHERE name ILIKE %s "
         params.append(f"%{name}%")
-
-    if email:
-        base_query += " AND email = %s" if name else " WHERE email = %s"
-        params.append(f"{email}")
 
     #SORTING (safe)
     allowed_sort_fields = {
@@ -97,6 +93,47 @@ def create_author(name, email):
 
 
 
+def delete_author(id=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute("SELECT id,name FROM authors WHERE id = %s",(id,))
+        author_row = cur.fetchone()
+
+        if author_row:
+            select_books_query = """
+                            SELECT
+                                id as book_id,
+                                title,
+                                isbn,
+                                published_year
+                            FROM books
+                            WHERE author_id = %s
+                            """
+            cur.execute(select_books_query,(id,))
+            books_rows = cur.fetchall()
+
+            query = "DELETE FROM authors WHERE id = %s"
+            cur.execute(query,(id,))
+            conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return author_row,books_rows if author_row else ()
+
+        
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        cur.close()
+        conn.close()
+
+
+
 def get_books(title=None, author=None, year=None, sort=None, order="desc",id=None):
     conn = get_connection()
     cur = conn.cursor()
@@ -108,8 +145,7 @@ def get_books(title=None, author=None, year=None, sort=None, order="desc",id=Non
                 books.isbn,
                 books.published_year,
                 books.author_id,
-                authors.name,
-                authors.email
+                authors.name
             FROM books
             JOIN authors ON books.author_id=authors.id
     """
@@ -198,3 +234,43 @@ def create_book(title, isbn, published_year, author_id):
         
     return new_book
 
+
+def delete_book(id=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+
+        select_query = """
+                        SELECT
+                            books.id,
+                            books.title,
+                            books.isbn,
+                            books.published_year,
+                            books.author_id,
+                            authors.name
+                        FROM books
+                        JOIN authors ON books.author_id = authors.id
+                        where books.id = %s
+                        """
+        cur.execute(select_query,(id,))
+        row = cur.fetchone()
+
+        if row:
+            query = "DELETE FROM books WHERE id = %s "
+            cur.execute(query,(id,))
+            conn.commit()
+
+        cur.close()
+        conn.close()
+
+        return row if row else ()
+
+        
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        cur.close()
+        conn.close()
