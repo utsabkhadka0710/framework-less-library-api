@@ -77,6 +77,9 @@ class MyHandler(BaseHTTPRequestHandler):
 
         self.response_sender(status_code,response_data)
 
+
+
+
     def do_DELETE(self):
 
         print("Request received ",self.path)
@@ -101,8 +104,6 @@ class MyHandler(BaseHTTPRequestHandler):
     
         self.response_sender(status_code, response_data)
         
-
-
 
 
 def run():

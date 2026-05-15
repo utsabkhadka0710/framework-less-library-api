@@ -93,13 +93,14 @@ def delete_author_handler(params):
     
     author_data = format_authors([author_row])
 
+
     deleted_book_data = [
         {
             "id": r[0],
             "title": r[1],
             "isbn": r[2],
             "published_year": r[3]
-        } for r in ([books_rows] if len(books_rows)==1 else books_rows)
+        } for r in books_rows
     ]
 
     data = [
@@ -111,4 +112,3 @@ def delete_author_handler(params):
         "status": "success",
         "data": data
     }
-    

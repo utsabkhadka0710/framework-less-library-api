@@ -38,7 +38,6 @@ def books_handler(query, params=None):
         id = params.get("id")
         row = queries.get_books(id=id)
         if row:
-            print(row)
             data = format_books([row])
             return 200, {
                 "status": "success",
@@ -57,7 +56,6 @@ def books_handler(query, params=None):
 
     rows = queries.get_books(title,author,year,sort,order)
 
-    print(rows)
     data = format_books(rows)
     
     return 200, {"status":"success", "data":data}
