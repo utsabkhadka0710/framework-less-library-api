@@ -114,8 +114,6 @@ def delete_author(id=None):
             cur.execute(query,(id,))
             conn.commit()
 
-        cur.close()
-        conn.close()
 
         return author_row,books_rows if author_row else ()
 
@@ -131,7 +129,7 @@ def delete_author(id=None):
 
 
 
-def get_books(title=None, author=None, year=None, sort=None, order="desc",id=None):
+def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="desc",id=None):
     conn = get_connection()
     cur = conn.cursor()
 
@@ -165,6 +163,10 @@ def get_books(title=None, author=None, year=None, sort=None, order="desc",id=Non
     if title:
         conditions.append("books.title ILIKE %s")
         params.append(f"%{title}%")
+
+    if isbn:
+        conditions.append("books.isbn ILIKE %s")
+        params.append(isbn)
 
     if author:
         conditions.append("authors.name ILIKE %s")
@@ -204,7 +206,6 @@ def get_books(title=None, author=None, year=None, sort=None, order="desc",id=Non
     return rows
 
 
-
 def create_book(title, isbn, published_year, author_id):
     conn = get_connection()
     cur = conn.cursor()
@@ -217,10 +218,9 @@ def create_book(title, isbn, published_year, author_id):
         )
 
         new_book = cur.fetchone()
-        print(new_book)
-    
         conn.commit()
 
+        return new_book
     except:
         conn.rollback()
         raise
@@ -228,23 +228,34 @@ def create_book(title, isbn, published_year, author_id):
     finally:
         cur.close()
         conn.close()
-        
-    return new_book
 
 
-def put_book(id, title, isbn, published_year, author_id ):
+
+def put_book(book_id, title, isbn, published_year, author_id):
     
     conn = get_connection()
     cur = conn.cursor()
-
-    if not get_authors(id=author_id):
-        return None
+    if not get_books(id=book_id):
+        try:
+            create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id)
+        except Exception as e:
+            print("Error: ",e)
+            return None, "existing isbn"
+        print("LINE 246")
+        row = get_books(isbn=isbn)
+        message = "Created"
+        cur.close()
+        conn.close()
+        return row, message
     
-    params = (title, isbn, published_year, author_id, id)
-
+          
     query = """WITH updated_book AS (
                     UPDATE books
-                    SET(title, isbn, published_year, author_id) = (%s, %s, %s, %s)
+                    SET
+                        title = %s,
+                        isbn =%s,
+                        published_year = %s,
+                        author_id = %s
                     WHERE id = %s
                     RETURNING id, title, isbn, published_year, author_id
                 )
@@ -254,18 +265,16 @@ def put_book(id, title, isbn, published_year, author_id ):
                     JOIN authors ON ub.author_id = authors.id
                 """
     
-    try: 
+    
+    params = (title,isbn,published_year,author_id,book_id)
+    try:
         cur.execute(query,params)
-        conn.commit()
 
         row = cur.fetchone()
+        message = "Updated"
+        conn.commit()
 
-        print(row)
-
-        cur.close()
-        conn.close()
-
-        return row
+        return [row], message
 
     except Exception:
         conn.rollback()
@@ -277,7 +286,7 @@ def put_book(id, title, isbn, published_year, author_id ):
 
 
 
-def delete_book(id=None):
+def delete_book(id=None): 
     conn = get_connection()
     cur = conn.cursor()
 

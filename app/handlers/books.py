@@ -49,12 +49,13 @@ def books_handler(query, params=None):
         
     
     title = query.get("title",[None])[0]
+    isbn = query.get("isbn",[None])[0]
     author = query.get("author",[None])[0]
     year = query.get("year",[None])[0]
     sort = query.get("sort",[None])[0]
     order = query.get("order",["desc"])[0]
 
-    rows = queries.get_books(title,author,year,sort,order)
+    rows = queries.get_books(title,isbn,author,year,sort,order)
 
     data = format_books(rows)
     
@@ -168,19 +169,22 @@ def put_book_handler(data, params):
             "message": "author doesn't exist"
         }
     
-    row = queries.put_book(id=book_id, title=title, isbn=isbn, published_year=published_year, author_id=author_id)
+    try: 
+        row, message = queries.put_book(book_id=book_id, title=title, isbn=isbn, published_year=published_year, author_id=author_id)
 
-    if row:
-        updated_data = format_books([row])
-        return 200, {
-            "status": "success",
-            "data": updated_data
+        if row:
+            updated_data = format_books(row)
+            return 200, {
+                "status": "success",
+                "data": updated_data,
+                "message": message
+            }
+        
+    except Exception:
+        return 400, {
+            "status": "error",
+            "message": f"coundn't update book"
         }
-
-    return 400, {
-        "status": "error",
-        "message": "coundn't update book"
-    }
 
 
 

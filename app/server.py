@@ -9,6 +9,7 @@ router = Router()
 router.add("GET","/",home.home_handler)
 router.add("GET","/authors",authors.authors_handler)
 router.add("GET","/books",books.books_handler)
+
 router.add("GET", "/books/<id>",books.books_handler)
 router.add("GET", "/authors/<id>",authors.authors_handler)
 
@@ -102,10 +103,14 @@ class MyHandler(BaseHTTPRequestHandler):
         handler, params = router.resolve("PUT",path)
 
         try:
-            status_code, response_data = handler(data, params)
+            if handler:
+                status_code, response_data = handler(data, params)
+            else: 
+                status_code, response_data = 404, {"error": "Not Found"}
 
-        except:
-            status_code, response_data = 404, {"error": "Not Found"}
+        except Exception as e:
+            print("Error: ",e)
+            status_code, response_data = 500, {"error": "Internal Server Error"}
 
         self.response_sender(status_code,response_data)
 
