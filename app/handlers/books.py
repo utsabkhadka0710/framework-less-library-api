@@ -1,6 +1,7 @@
-import db.queries as queries
 import re
 from datetime import datetime
+import db.book_queries as queries
+from db.author_queries import get_authors
 
 
 
@@ -90,7 +91,7 @@ def create_book_handler(data):
             "message": "author_id is required"
         }
 
-    if not queries.get_authors(id=author_id):
+    if not get_authors(id=author_id):
         return 400, {
             "status": "error",
             "message": "author doesn't exist"
@@ -140,6 +141,7 @@ def put_book_handler(data, params):
     published_year = data.get("published_year",None)
     author_id = data.get("author_id", None)
 
+    
     if not title or len(title)<1 :
             return 400, {
                 "status": "error",
@@ -163,15 +165,15 @@ def put_book_handler(data, params):
             "message": "author_id is required"
         }
     
-    if not queries.get_authors(id=author_id):
+    if not get_authors(id=author_id):
         return 400, {
             "status": "error",
             "message": "author doesn't exist"
         }
     
+
     try: 
         row, message = queries.put_book(book_id=book_id, title=title, isbn=isbn, published_year=published_year, author_id=author_id)
-
         if row:
             updated_data = format_books(row)
             return 200, {
@@ -179,12 +181,14 @@ def put_book_handler(data, params):
                 "data": updated_data,
                 "message": message
             }
-        
-    except Exception:
-        return 400, {
-            "status": "error",
-            "message": f"coundn't update book"
-        }
+    
+    except Exception as e:
+        print("Error: ",e)
+
+    return 400, {
+        "status": "error",
+        "message": "coundn't update book"
+    }
 
 
 

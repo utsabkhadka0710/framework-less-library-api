@@ -1,3 +1,7 @@
 .venv
 
+utils/
+
+logs/
+
 __pycache__

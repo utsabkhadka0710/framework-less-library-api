@@ -32,7 +32,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
 
     def do_GET(self):
-        print("Request received", self.path)
+        print(f"Request received: {self.path}")
 
         parsed = urlparse(self.path)
         path = parsed.path
@@ -47,7 +47,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error": "Not found"}
         
         except Exception as e:
-            print("Error:", e)
+            print(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
         self.response_sender(status_code,response_data)
@@ -56,7 +56,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
 
     def do_POST(self):
-        print("Request received ",self.path)
+        print(f"Request received: {self.path}")
         
         parsed = urlparse(self.path)
         path = parsed.path
@@ -78,7 +78,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error":"Not Found"}
 
         except Exception as e:
-            print("Error:", e)
+            print(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
         self.response_sender(status_code,response_data)
@@ -87,7 +87,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
 
     def do_PUT(self):
-        print("Request received ",self.path)
+        print(f"Request received: {self.path}")
 
         parsed = urlparse(self.path)
         path = parsed.path
@@ -109,7 +109,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error": "Not Found"}
 
         except Exception as e:
-            print("Error: ",e)
+            print(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
         self.response_sender(status_code,response_data)
@@ -118,7 +118,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
     def do_DELETE(self):
 
-        print("Request received ",self.path)
+        print(f"Request received: {self.path}")
 
         parsed = urlparse(self.path)
         path = parsed.path
@@ -135,7 +135,7 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error": "Not found"}
 
         except Exception as e:
-            print("Error: ", e)
+            print(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal server error"}
     
         self.response_sender(status_code, response_data)

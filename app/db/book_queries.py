@@ -1,134 +1,6 @@
 from .connection import get_connection
 
 
-def get_authors(name=None, sort=None, order="desc",id=None):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    base_query = "SELECT id, name FROM authors"
-
-    if id:
-        base_query += " WHERE id = %s"
-
-        cur.execute(base_query, (id,))
-
-        row = cur.fetchone()
-
-        cur.close()
-        conn.close()
-
-        return row
-    
-    params= []
-
-    if name:
-        base_query += " WHERE name ILIKE %s "
-        params.append(f"%{name}%")
-
-    #SORTING (safe)
-    allowed_sort_fields = {
-        "name": "name",
-        "created_at": "created_at",
-        "id": "id"
-    }
-
-    sort_field = allowed_sort_fields.get(sort,"id")
-
-    order = order.lower()
-    if not order in ["asc","desc"]:
-        order = "desc"
-
-    base_query += f" ORDER BY {sort_field} {order}"
-
-    cur.execute(base_query,params)
-
-    rows = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return rows
-
-
-
-def create_author(name, email):
-    conn = get_connection()
-
-    cur = conn.cursor()
-
-    try:
-        cur.execute(
-            "INSERT INTO authors(name, email) VALUES (%s, %s) RETURNING id, name, email;",
-            (name, email)
-            )
-        
-        new_author = cur.fetchone()
-
-        conn.commit()
-    
-    except:
-        conn.rollback()
-        raise
-
-    finally:
-        cur.close()
-        conn.close()
-
-    return new_author
-
-
-
-def put_author(id, email):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if not get_authors(id=id):
-        return None
-    
-    query = """
-    """
-
-
-def delete_author(id=None):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    try:
-        cur.execute("SELECT id,name FROM authors WHERE id = %s",(id,))
-        author_row = cur.fetchone()
-
-        if author_row:
-            select_books_query = """
-                            SELECT
-                                id as book_id,
-                                title,
-                                isbn,
-                                published_year
-                            FROM books
-                            WHERE author_id = %s
-                            """
-            cur.execute(select_books_query,(id,))
-            books_rows = cur.fetchall()
-
-            query = "DELETE FROM authors WHERE id = %s"
-            cur.execute(query,(id,))
-            conn.commit()
-
-
-        return author_row,books_rows if author_row else ()
-
-        
-    except Exception:
-        conn.rollback()
-        raise
-
-    finally:
-        cur.close()
-        conn.close()
-
-
-
-
 def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="desc",id=None):
     conn = get_connection()
     cur = conn.cursor()
@@ -206,6 +78,8 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="de
     return rows
 
 
+
+
 def create_book(title, isbn, published_year, author_id):
     conn = get_connection()
     cur = conn.cursor()
@@ -231,22 +105,27 @@ def create_book(title, isbn, published_year, author_id):
 
 
 
+
 def put_book(book_id, title, isbn, published_year, author_id):
     
     conn = get_connection()
     cur = conn.cursor()
+
     if not get_books(id=book_id):
         try:
             create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id)
+            row = get_books(isbn=isbn)
+            message = "Created"
+
+            return row, message
+
         except Exception as e:
             print("Error: ",e)
-            return None, "existing isbn"
-        print("LINE 246")
-        row = get_books(isbn=isbn)
-        message = "Created"
-        cur.close()
-        conn.close()
-        return row, message
+            return None
+        
+        finally:
+            cur.close()
+            conn.close()
     
           
     query = """WITH updated_book AS (
@@ -283,6 +162,7 @@ def put_book(book_id, title, isbn, published_year, author_id):
     finally:
         cur.close()
         conn.close()
+
 
 
 

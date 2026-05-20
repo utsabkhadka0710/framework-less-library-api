@@ -1,4 +1,4 @@
-import db.queries as queries
+import db.author_queries as queries
 import re
 
 def is_valid_email(email):
@@ -11,7 +11,8 @@ def format_authors(author_row):
     return [
         {
             "id": r[0],
-            "name": r[1]
+            "name": r[1],
+            "email": r[2]
         } for r in author_row
     ]
 
@@ -64,11 +65,7 @@ def create_author_handler(data):
     try:
         row = queries.create_author(name,email)
 
-        author = {
-            "id": row[0],
-            "name": row[1],
-            "email": row[2]
-        }
+        author = format_authors([row])
 
         return 201, {
             "status": "success",
@@ -119,11 +116,6 @@ def put_author_handler(data, params):
     name = data.get("name", None)
     email = data.get("email", None)
 
-    if not queries.get_authors(id=id):
-        return 404, {
-            "status": "error",
-            "message": "Not Found"
-        }
     
     if not name or len(name)<2:
         return 400, {
@@ -138,7 +130,22 @@ def put_author_handler(data, params):
         }
     
     try:
-        row = queries.put_author(id, name, email)
+        row, message = queries.put_author(id, name, email)
+        print(row,message)
+        if row:
+            print(row)
+            updated_data = format_authors(row)
+            print(updated_data)
+            return 200, {
+                "status": "success",
+                "data": updated_data,
+                "message": message
+            }
 
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"Error: {e}")
+
+    return 400, {
+        "status": "error",
+        "message": "coundn't update book"
+    }
