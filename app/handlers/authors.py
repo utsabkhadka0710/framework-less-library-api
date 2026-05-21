@@ -1,20 +1,12 @@
-import db.author_queries as queries
 import re
+import db.author_queries as queries
+from utils.logger import create_logger
+from utils.validator import is_valid_email
+from utils.formatter import format_authors
 
-def is_valid_email(email):
-    return (re.match(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9.]+\.[a-zA-Z0-9]+$",email))
 
+logger = create_logger(name=__name__)
 
-
-def format_authors(author_row):
-
-    return [
-        {
-            "id": r[0],
-            "name": r[1],
-            "email": r[2]
-        } for r in author_row
-    ]
 
 
 def authors_handler(query, params=None):
@@ -36,7 +28,7 @@ def authors_handler(query, params=None):
 
     name = query.get("name",[None])[0]
     sort = query.get("sort",[None])[0]
-    order = query.get("order",["desc"])[0]
+    order = query.get("order",["asc"])[0]
 
     rows = queries.get_authors(name,sort,order)
     data = format_authors(rows)
@@ -73,7 +65,7 @@ def create_author_handler(data):
             }
     
     except Exception as e:
-        print("Unexpected Error:", e)
+        logger.error(f"Unexpected Error: {e}")
         return 400, {
             "status": "error",
             "message": "Email already exists"
@@ -143,7 +135,7 @@ def put_author_handler(data, params):
             }
 
     except Exception as e:
-        print(f"Error: {e}")
+        logger.info(f"Error: {e}")
 
     return 400, {
         "status": "error",

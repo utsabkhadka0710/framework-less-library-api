@@ -1,7 +1,7 @@
 from .connection import get_connection
 
 
-def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="desc",id=None):
+def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="asc",id=None):
     conn = get_connection()
     cur = conn.cursor()
 
@@ -63,7 +63,7 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="de
 
     order = order.lower()
     if order not in ["asc","desc"]:
-        order = "desc"
+        order = "asc"
 
     base_query += f" ORDER BY {sort_field} {order}"
     
@@ -205,3 +205,4 @@ def delete_book(id=None):
     finally:
         cur.close()
         conn.close()
+        

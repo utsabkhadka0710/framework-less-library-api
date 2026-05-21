@@ -2,35 +2,13 @@ import re
 from datetime import datetime
 import db.book_queries as queries
 from db.author_queries import get_authors
+from utils.logger import create_logger
+from utils.validator import is_valid_isbn, is_valid_year
+from utils.formatter import format_books
 
 
+logger = create_logger(name=__name__)
 
-def is_valid_isbn(isbn):
-    return re.match(r"^\d{10}$",isbn)
-
-
-def is_valid_year(year):
-    current_year = datetime.now().year
-
-    try:
-        return 1000 <= int(year) <= current_year
-    except:
-        return False
-
-
-def format_books(rows):
-    return [
-        {
-            "id": r[0],
-            "title": r[1],
-            "isbn": r[2],
-            "published_year":r[3],
-            "author":{
-                "author_id": r[4],
-                "author_name": r[5]
-            }
-         } for r in rows
-    ]
 
 
 def books_handler(query, params=None):
@@ -52,11 +30,11 @@ def books_handler(query, params=None):
     title = query.get("title",[None])[0]
     isbn = query.get("isbn",[None])[0]
     author = query.get("author",[None])[0]
-    year = query.get("year",[None])[0]
+    published_year = query.get("published_year",[None])[0]
     sort = query.get("sort",[None])[0]
-    order = query.get("order",["desc"])[0]
+    order = query.get("order",["asc"])[0]
 
-    rows = queries.get_books(title,isbn,author,year,sort,order)
+    rows = queries.get_books(title,isbn,author,published_year,sort,order)
 
     data = format_books(rows)
     
@@ -114,7 +92,7 @@ def create_book_handler(data):
         }
 
     except Exception as e:
-        print("Unexpected error: ", e)
+        logger.error(f"Unexpected error: {e}")
         return 400, {
             "status": "error",
             "message": "could not create a book"
@@ -183,13 +161,9 @@ def put_book_handler(data, params):
             }
     
     except Exception as e:
-        print("Error: ",e)
+        logger.error(f"Error: {e}")
 
     return 400, {
         "status": "error",
         "message": "coundn't update book"
     }
-
-
-
-

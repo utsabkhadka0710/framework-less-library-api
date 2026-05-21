@@ -1,7 +1,7 @@
 from .connection import get_connection
 
 
-def get_authors(name=None, sort=None, order="desc",id=None):
+def get_authors(name=None, sort=None, order="asc",id=None):
     conn = get_connection()
     cur = conn.cursor()
 
@@ -35,7 +35,7 @@ def get_authors(name=None, sort=None, order="desc",id=None):
 
     order = order.lower()
     if not order in ["asc","desc"]:
-        order = "desc"
+        order = "asc"
 
     base_query += f" ORDER BY {sort_field} {order}"
 
@@ -165,3 +165,4 @@ def delete_author(id=None):
     finally:
         cur.close()
         conn.close()
+        

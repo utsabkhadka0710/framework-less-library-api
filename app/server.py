@@ -1,8 +1,13 @@
+import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import urlparse, parse_qs
 from router import Router
 from handlers import home,authors,books
-import json
+from utils.logger import create_logger
+from utils.response import response_sender
+from utils.read_body import read_body
+from utils.parse_url import parse_url
+
+logger = create_logger(name=__name__)
 
 router = Router()
 
@@ -24,19 +29,10 @@ router.add("PUT","/books/<id>",books.put_book_handler)
 
 class MyHandler(BaseHTTPRequestHandler):
 
-    def response_sender(self,status_code=404,response_data= {"error":"Not found"}):
-        self.send_response(status_code)
-        self.send_header("Content-Type","application/json")
-        self.end_headers()
-        self.wfile.write(json.dumps(response_data, indent=4).encode())
-
-
     def do_GET(self):
-        print(f"Request received: {self.path}")
+        logger.info(f"GET Request received: {self.path}")
 
-        parsed = urlparse(self.path)
-        path = parsed.path
-        query_params = parse_qs(parsed.query)
+        path, query_params = parse_url(self.path)
 
         handler, params = router.resolve("GET",path)
 
@@ -47,58 +43,44 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error": "Not found"}
         
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error GET: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        self.response_sender(status_code,response_data)
+        response_sender(self,status_code,response_data)
 
 
 
 
     def do_POST(self):
-        print(f"Request received: {self.path}")
+        logger.info(f"POST Request received: {self.path}")
         
-        parsed = urlparse(self.path)
-        path = parsed.path
+        path, query_params = parse_url(self.path)
             
-        content_length = int(self.headers.get('Content-Length',0))
-        body = self.rfile.read(content_length)
-
-        try:
-            data = json.loads(body)
-        except:
-            data = {}
+        data = read_body(self)
 
         handler = router.resolve("POST",path)[0]
 
         try:
-            if handler:
+            if handler and (not query_params):
                 status_code, response_data = handler(data)
             else:
                 status_code, response_data = 404, {"error":"Not Found"}
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error POST: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        self.response_sender(status_code,response_data)
+        response_sender(self,status_code,response_data)
 
 
 
 
     def do_PUT(self):
-        print(f"Request received: {self.path}")
+        logger.info(f"PUT Request received: {self.path}")
 
-        parsed = urlparse(self.path)
-        path = parsed.path
+        path, query_params = parse_url(self.path)
 
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length)
-
-        try:
-            data = json.loads(body)
-        except:
-            data = {}
+        data = read_body(self)
 
         handler, params = router.resolve("PUT",path)
 
@@ -109,36 +91,31 @@ class MyHandler(BaseHTTPRequestHandler):
                 status_code, response_data = 404, {"error": "Not Found"}
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        self.response_sender(status_code,response_data)
+        response_sender(self,status_code,response_data)
 
         
 
     def do_DELETE(self):
+        logger.info(f"DELETE Request received: {self.path}")
 
-        print(f"Request received: {self.path}")
-
-        parsed = urlparse(self.path)
-        path = parsed.path
-
-        content_length = int(self.headers.get("Content-Length", 0))
-        body = self.rfile.read(content_length)
+        path, query_params = parse_url(self.path)
 
         handler, params = router.resolve("DELETE",path)
 
         try:
-            if handler:
+            if handler and (not query_params):
                 status_code, response_data= handler(params)
             else:
                 status_code, response_data = 404, {"error": "Not found"}
 
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal server error"}
     
-        self.response_sender(status_code, response_data)
+        response_sender(self,status_code, response_data)
         
 
 
@@ -146,17 +123,17 @@ def run():
     server_address = ("",8000)
     httpd = HTTPServer(server_address,MyHandler)
 
-    print("Server Running on http://localhost:8000")
+    logger.info("Server Running on http://localhost:8000")
 
     try:
         httpd.serve_forever()
 
     except KeyboardInterrupt:
-        print("Server stopped \"http://localhost\" no more running!! (Keyboard Interrupt)")
+        logger.warning("Server stopped \"http://localhost\" no more running!! (Keyboard Interrupt)")
 
-    # finally:
-    #     httpd.server_close()
-    #     print("Server closed cleanly")
+    finally:
+        httpd.server_close()
+        logger.info("Server closed cleanly")
 
 
 if __name__ == "__main__":
