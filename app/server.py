@@ -1,11 +1,11 @@
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
-from router import Router
-from handlers import home,authors,books
-from utils.logger import create_logger
-from utils.response import response_sender
-from utils.read_body import read_body
-from utils.parse_url import parse_url
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from .router import Router
+from .handlers import home,authors,books
+from app.utils.logger import create_logger
+from app.utils.response import response_sender
+from app.utils.read_body import read_body
+from app.utils.parse_url import parse_url
 
 logger = create_logger(name=__name__)
 
@@ -121,7 +121,7 @@ class MyHandler(BaseHTTPRequestHandler):
 
 def run():
     server_address = ("",8000)
-    httpd = HTTPServer(server_address,MyHandler)
+    httpd = ThreadingHTTPServer(server_address,MyHandler)
 
     logger.info("Server Running on http://localhost:8000")
 

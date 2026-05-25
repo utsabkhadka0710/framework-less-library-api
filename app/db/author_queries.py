@@ -1,23 +1,25 @@
-from .connection import get_connection
+from .connection import db_pool
 
 
 def get_authors(name=None, sort=None, order="asc",id=None):
-    conn = get_connection()
+    conn = db_pool.getconn()
     cur = conn.cursor()
 
     base_query = "SELECT id, name, email FROM authors"
 
     if id:
         base_query += " WHERE id = %s"
+        try:
+            cur.execute(base_query, (id,))
+            row = cur.fetchone()
+            return row
+        except Exception as e:
+            conn.rollback()
+            raise
+        finally:
+            cur.close()
+            db_pool.putconn(conn)
 
-        cur.execute(base_query, (id,))
-
-        row = cur.fetchone()
-
-        cur.close()
-        conn.close()
-
-        return row
     
     params= []
 
@@ -39,21 +41,21 @@ def get_authors(name=None, sort=None, order="asc",id=None):
 
     base_query += f" ORDER BY {sort_field} {order}"
 
-    cur.execute(base_query,params)
-
-    rows = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return rows
-
+    try:
+        cur.execute(base_query,params)
+        rows = cur.fetchall()
+        return rows
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        cur.close()
+        db_pool.putconn(conn)
 
 
 
 def create_author(name, email):
-    conn = get_connection()
-
+    conn = db_pool.getconn()
     cur = conn.cursor()
 
     try:
@@ -65,43 +67,34 @@ def create_author(name, email):
         new_author = cur.fetchone()
 
         conn.commit()
-    
-    except:
+
+        return new_author
+    except Exception as e:
         conn.rollback()
         raise
-
     finally:
         cur.close()
-        conn.close()
-
-    return new_author
-
+        db_pool.putconn(conn)
 
 
 
 def put_author(author_id, name, email):
-    conn = get_connection()
-    cur = conn.cursor()
 
     if not get_authors(id=author_id):
         try:
             new_row = create_author(name,email)
             new_author_id = new_row[0]
             row = get_authors(id=new_author_id)
-
             message = "Created"
             return [row], message
-
         except Exception as e:
-            print(f"Error: {e}")
-            return None, e
+            return (),e
 
-        finally:
-            cur.close()
-            conn.close()
         
     
 
+    conn = db_pool.getconn()
+    cur = conn.cursor()
     params = (name, email, author_id)
     query = """
             UPDATE authors
@@ -116,21 +109,19 @@ def put_author(author_id, name, email):
         row = cur.fetchone()
         message = "Updated"
         conn.commit()
-
         return [row], message
-    
     except Exception as e:
-        print(f"Error: {e}")
-    
+        return None,e
+        conn.rollback()
+        raise
     finally:
         cur.close()
-        conn.close()
-
+        db_pool.putconn(conn)
 
 
 
 def delete_author(id=None):
-    conn = get_connection()
+    conn = db_pool.getconn()
     cur = conn.cursor()
 
     try:
@@ -154,15 +145,11 @@ def delete_author(id=None):
             cur.execute(query,(id,))
             conn.commit()
 
-
         return author_row,books_rows if author_row else ()
-
-        
-    except Exception:
+    except Exception as e:
         conn.rollback()
         raise
-
     finally:
         cur.close()
-        conn.close()
+        db_pool.putconn(conn)
         

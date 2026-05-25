@@ -1,13 +1,13 @@
 import re
-import db.author_queries as queries
-from utils.logger import create_logger
-from utils.validator import is_valid_email
-from utils.formatter import format_authors
+import app.db.author_queries as queries
+from app.utils.logger import create_logger
+from app.utils.validator import is_valid_email
+from app.utils.formatter import format_authors
 
 
 logger = create_logger(name=__name__)
 
-
+print()
 
 def authors_handler(query, params=None):
 
@@ -123,11 +123,8 @@ def put_author_handler(data, params):
     
     try:
         row, message = queries.put_author(id, name, email)
-        print(row,message)
         if row:
-            print(row)
             updated_data = format_authors(row)
-            print(updated_data)
             return 200, {
                 "status": "success",
                 "data": updated_data,

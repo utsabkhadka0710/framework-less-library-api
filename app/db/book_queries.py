@@ -1,9 +1,9 @@
-from .connection import get_connection
+from .connection import db_pool, get_cursor
 
 
 def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="asc",id=None):
-    conn = get_connection()
-    cur = conn.cursor()
+    # conn = db_pool.getconn()
+    # cur = conn.cursor()
 
     base_query = """
             SELECT
@@ -19,16 +19,21 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="as
 
     if id:
         base_query = base_query + " WHERE books.id = %s"
-        cur.execute(base_query, (id,))
-
-        row = cur.fetchone()
-
-        cur.close()
-        conn.close()
-
-        return row
-
-
+        with get_cursor() as cur:
+            cur.execute(base_query, (id,))
+            row = cur.fetchone()
+            return row
+        # try:
+        #     cur.execute(base_query, (id,))
+        #     row = cur.fetchone()
+        #     return row
+        # except Exception as e:
+        #     conn.rollback()
+        #     raise
+        # finally:
+        #     cur.close()
+        #     db_pool.putconn(conn)
+            
     conditions = []
     params = []
 
@@ -67,67 +72,77 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="as
 
     base_query += f" ORDER BY {sort_field} {order}"
     
+    with get_cursor() as cur:
+        cur.execute(base_query,params)
+        rows = cur.fetchall()
+        return rows
+    # try:
+    #     cur.execute(base_query,params)
+    #     rows = cur.fetchall()
+    #     return rows
+    # except:
+    #     conn.rollback()
+    #     raise
+    # finally:
+    #     cur.close()
+    #     db_pool.putconn(conn)
 
-    cur.execute(base_query,params)
-    
-    rows = cur.fetchall()
-
-    cur.close()
-    conn.close()
-
-    return rows
 
 
 
 
 def create_book(title, isbn, published_year, author_id):
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
+    # conn = db_pool.getconn()
+    # cur = conn.cursor()
+    with get_cursor() as cur:
+        print("create book called")
         cur.execute(
             """INSERT INTO books (title, isbn, published_year, author_id)
             VALUES (%s, %s, %s, %s)
             RETURNING id, title, isbn, published_year, author_id""",
             (title, isbn, published_year, author_id)
         )
-
         new_book = cur.fetchone()
-        conn.commit()
-
+        print(new_book)
         return new_book
-    except:
-        conn.rollback()
-        raise
+    # try:
+    #     cur.execute(
+    #         """INSERT INTO books (title, isbn, published_year, author_id)
+    #         VALUES (%s, %s, %s, %s)
+    #         RETURNING id, title, isbn, published_year, author_id""",
+    #         (title, isbn, published_year, author_id)
+    #     )
 
-    finally:
-        cur.close()
-        conn.close()
+    #     new_book = cur.fetchone()
+    #     conn.commit()
+
+    #     return new_book
+    # except:
+    #     conn.rollback()
+    #     raise
+
+    # finally:
+    #     cur.close()
+    #     db_pool.putconn(conn)
 
 
 
 
 def put_book(book_id, title, isbn, published_year, author_id):
-    
-    conn = get_connection()
-    cur = conn.cursor()
 
     if not get_books(id=book_id):
+        print("put book entered line 132")
         try:
-            create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id)
+            print(create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id))
             row = get_books(isbn=isbn)
+            print("inside put book try line 136: ",row)
             message = "Created"
-
             return row, message
-
         except Exception as e:
-            print("Error: ",e)
-            return None
-        
-        finally:
-            cur.close()
-            conn.close()
-    
+            return None, e
           
+    # conn = db_pool.getconn()
+    # cur = conn.cursor()
     query = """WITH updated_book AS (
                     UPDATE books
                     SET
@@ -146,63 +161,63 @@ def put_book(book_id, title, isbn, published_year, author_id):
     
     
     params = (title,isbn,published_year,author_id,book_id)
-    try:
+    
+    with get_cursor() as cur:
         cur.execute(query,params)
-
         row = cur.fetchone()
         message = "Updated"
-        conn.commit()
-
         return [row], message
+    # try:
+    #     cur.execute(query,params)
+    #     row = cur.fetchone()
+    #     message = "Updated"
+    #     conn.commit()
+    #     return [row], message
 
-    except Exception:
-        conn.rollback()
-        raise
-
-    finally:
-        cur.close()
-        conn.close()
-
+    # except Exception:
+    #     conn.rollback()
+    #     raise
+    # finally:
+    #     cur.close()
+    #     db_pool.putconn(conn)
 
 
 
 def delete_book(id=None): 
-    conn = get_connection()
-    cur = conn.cursor()
+    # conn = db_pool.getconn()
+    # cur = conn.cursor()
 
-    try:
 
-        select_query = """
-                        SELECT
-                            books.id,
-                            books.title,
-                            books.isbn,
-                            books.published_year,
-                            books.author_id,
-                            authors.name
-                        FROM books
-                        JOIN authors ON books.author_id = authors.id
-                        where books.id = %s
-                        """
+    select_query = """
+                    SELECT
+                        books.id,
+                        books.title,
+                        books.isbn,
+                        books.published_year,
+                        books.author_id,
+                        authors.name
+                    FROM books
+                    JOIN authors ON books.author_id = authors.id
+                    where books.id = %s
+                    """
+    with get_cursor() as cur:
         cur.execute(select_query,(id,))
         row = cur.fetchone()
-
-        if row:
-            query = "DELETE FROM books WHERE id = %s "
-            cur.execute(query,(id,))
-            conn.commit()
-
-        cur.close()
-        conn.close()
-
+        query = "DELETE FROM books WHERE id = %s "
+        cur.execute(query,(id,))
         return row
+    # try:
+    #     cur.execute(select_query,(id,))
+    #     row = cur.fetchone()
 
-        
-    except Exception:
-        conn.rollback()
-        raise
-
-    finally:
-        cur.close()
-        conn.close()
-        
+    #     if row:
+    #         query = "DELETE FROM books WHERE id = %s "
+    #         cur.execute(query,(id,))
+    #         conn.commit()
+    #     return row 
+    # except Exception as e:
+    #     conn.rollback()
+    #     raise
+    # finally:
+    #     cur.close()
+    #     db_pool.putconn(conn)
