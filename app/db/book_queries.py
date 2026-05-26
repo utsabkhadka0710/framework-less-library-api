@@ -1,9 +1,7 @@
-from .connection import db_pool, get_cursor
+from .connection import get_cursor
 
 
 def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="asc",id=None):
-    # conn = db_pool.getconn()
-    # cur = conn.cursor()
 
     base_query = """
             SELECT
@@ -23,16 +21,6 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="as
             cur.execute(base_query, (id,))
             row = cur.fetchone()
             return row
-        # try:
-        #     cur.execute(base_query, (id,))
-        #     row = cur.fetchone()
-        #     return row
-        # except Exception as e:
-        #     conn.rollback()
-        #     raise
-        # finally:
-        #     cur.close()
-        #     db_pool.putconn(conn)
             
     conditions = []
     params = []
@@ -76,24 +64,10 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="as
         cur.execute(base_query,params)
         rows = cur.fetchall()
         return rows
-    # try:
-    #     cur.execute(base_query,params)
-    #     rows = cur.fetchall()
-    #     return rows
-    # except:
-    #     conn.rollback()
-    #     raise
-    # finally:
-    #     cur.close()
-    #     db_pool.putconn(conn)
-
-
 
 
 
 def create_book(title, isbn, published_year, author_id):
-    # conn = db_pool.getconn()
-    # cur = conn.cursor()
     with get_cursor() as cur:
         print("create book called")
         cur.execute(
@@ -105,26 +79,6 @@ def create_book(title, isbn, published_year, author_id):
         new_book = cur.fetchone()
         print(new_book)
         return new_book
-    # try:
-    #     cur.execute(
-    #         """INSERT INTO books (title, isbn, published_year, author_id)
-    #         VALUES (%s, %s, %s, %s)
-    #         RETURNING id, title, isbn, published_year, author_id""",
-    #         (title, isbn, published_year, author_id)
-    #     )
-
-    #     new_book = cur.fetchone()
-    #     conn.commit()
-
-    #     return new_book
-    # except:
-    #     conn.rollback()
-    #     raise
-
-    # finally:
-    #     cur.close()
-    #     db_pool.putconn(conn)
-
 
 
 
@@ -141,8 +95,7 @@ def put_book(book_id, title, isbn, published_year, author_id):
         except Exception as e:
             return None, e
           
-    # conn = db_pool.getconn()
-    # cur = conn.cursor()
+
     query = """WITH updated_book AS (
                     UPDATE books
                     SET
@@ -167,26 +120,10 @@ def put_book(book_id, title, isbn, published_year, author_id):
         row = cur.fetchone()
         message = "Updated"
         return [row], message
-    # try:
-    #     cur.execute(query,params)
-    #     row = cur.fetchone()
-    #     message = "Updated"
-    #     conn.commit()
-    #     return [row], message
-
-    # except Exception:
-    #     conn.rollback()
-    #     raise
-    # finally:
-    #     cur.close()
-    #     db_pool.putconn(conn)
 
 
 
 def delete_book(id=None): 
-    # conn = db_pool.getconn()
-    # cur = conn.cursor()
-
 
     select_query = """
                     SELECT
@@ -206,18 +143,3 @@ def delete_book(id=None):
         query = "DELETE FROM books WHERE id = %s "
         cur.execute(query,(id,))
         return row
-    # try:
-    #     cur.execute(select_query,(id,))
-    #     row = cur.fetchone()
-
-    #     if row:
-    #         query = "DELETE FROM books WHERE id = %s "
-    #         cur.execute(query,(id,))
-    #         conn.commit()
-    #     return row 
-    # except Exception as e:
-    #     conn.rollback()
-    #     raise
-    # finally:
-    #     cur.close()
-    #     db_pool.putconn(conn)

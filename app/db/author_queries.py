@@ -1,26 +1,17 @@
-from .connection import db_pool
+from .connection import get_cursor
 
 
 def get_authors(name=None, sort=None, order="asc",id=None):
-    conn = db_pool.getconn()
-    cur = conn.cursor()
 
     base_query = "SELECT id, name, email FROM authors"
 
     if id:
         base_query += " WHERE id = %s"
-        try:
+        with get_cursor() as cur:
             cur.execute(base_query, (id,))
             row = cur.fetchone()
             return row
-        except Exception as e:
-            conn.rollback()
-            raise
-        finally:
-            cur.close()
-            db_pool.putconn(conn)
 
-    
     params= []
 
     if name:
@@ -41,41 +32,22 @@ def get_authors(name=None, sort=None, order="asc",id=None):
 
     base_query += f" ORDER BY {sort_field} {order}"
 
-    try:
+    with get_cursor() as cur:
         cur.execute(base_query,params)
         rows = cur.fetchall()
         return rows
-    except Exception as e:
-        conn.rollback()
-        raise
-    finally:
-        cur.close()
-        db_pool.putconn(conn)
 
 
 
 def create_author(name, email):
-    conn = db_pool.getconn()
-    cur = conn.cursor()
 
-    try:
+    with get_cursor() as cur:
         cur.execute(
             "INSERT INTO authors(name, email) VALUES (%s, %s) RETURNING id, name, email;",
             (name, email)
             )
-        
         new_author = cur.fetchone()
-
-        conn.commit()
-
         return new_author
-    except Exception as e:
-        conn.rollback()
-        raise
-    finally:
-        cur.close()
-        db_pool.putconn(conn)
-
 
 
 def put_author(author_id, name, email):
@@ -89,12 +61,7 @@ def put_author(author_id, name, email):
             return [row], message
         except Exception as e:
             return (),e
-
         
-    
-
-    conn = db_pool.getconn()
-    cur = conn.cursor()
     params = (name, email, author_id)
     query = """
             UPDATE authors
@@ -104,27 +71,17 @@ def put_author(author_id, name, email):
             WHERE id = %s
             RETURNING id, name, email
             """
-    try:
+    with get_cursor() as cur:
         cur.execute(query,params)
         row = cur.fetchone()
         message = "Updated"
-        conn.commit()
         return [row], message
-    except Exception as e:
-        return None,e
-        conn.rollback()
-        raise
-    finally:
-        cur.close()
-        db_pool.putconn(conn)
 
 
 
 def delete_author(id=None):
-    conn = db_pool.getconn()
-    cur = conn.cursor()
 
-    try:
+    with get_cursor() as cur:
         cur.execute("SELECT id,name,email FROM authors WHERE id = %s",(id,))
         author_row = cur.fetchone()
 
@@ -143,13 +100,5 @@ def delete_author(id=None):
 
             query = "DELETE FROM authors WHERE id = %s"
             cur.execute(query,(id,))
-            conn.commit()
 
         return author_row,books_rows if author_row else ()
-    except Exception as e:
-        conn.rollback()
-        raise
-    finally:
-        cur.close()
-        db_pool.putconn(conn)
-        

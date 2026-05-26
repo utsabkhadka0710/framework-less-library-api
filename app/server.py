@@ -122,7 +122,6 @@ class MyHandler(BaseHTTPRequestHandler):
 def run():
     server_address = ("",8000)
     httpd = ThreadingHTTPServer(server_address,MyHandler)
-
     logger.info("Server Running on http://localhost:8000")
 
     try:
