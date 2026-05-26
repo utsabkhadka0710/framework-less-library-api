@@ -1,4 +1,4 @@
-import json
+import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from .router import Router
 from .handlers import home,authors,books
@@ -8,6 +8,7 @@ from app.utils.read_body import read_body
 from app.utils.parse_url import parse_url
 
 logger = create_logger(name=__name__)
+
 
 router = Router()
 
@@ -118,11 +119,12 @@ class MyHandler(BaseHTTPRequestHandler):
         response_sender(self,status_code, response_data)
         
 
-
+PORT = int(os.getenv("PORT",8000))
+HOST = "0.0.0.0"
 def run():
-    server_address = ("",8000)
+    server_address = (HOST,PORT)
     httpd = ThreadingHTTPServer(server_address,MyHandler)
-    logger.info("Server Running on http://localhost:8000")
+    logger.info(f"Server Running on {HOST}: {PORT}")
 
     try:
         httpd.serve_forever()

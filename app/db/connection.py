@@ -7,10 +7,10 @@ from contextlib import contextmanager
 load_dotenv()
 db_config = {
     "dbname": os.getenv("DB_NAME"),
-    "user": os.getenv("USER"),
-    "password": os.getenv("PASSWORD"),
-    "host": os.getenv("HOST"),
-    "port": os.getenv("PORT")
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "host": os.getenv("DB_HOST"),
+    "port": os.getenv("DB_PORT")
 }
 
 db_pool = ConnectionPool(
@@ -18,7 +18,7 @@ db_pool = ConnectionPool(
     kwargs= db_config,
     min_size=1,
     max_size=100,
-    open=True
+    open=True,
 )
 
 @contextmanager

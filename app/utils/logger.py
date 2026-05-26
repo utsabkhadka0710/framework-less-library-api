@@ -32,7 +32,7 @@ def create_logger(name: str) -> logging.Logger:
 
     if not logger.handlers:
         logger.addHandler(console_handler)
-        # logger.addHandler(file_handler)
+        logger.addHandler(file_handler)
 
 
     return logger
