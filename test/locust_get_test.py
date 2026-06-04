@@ -2,7 +2,7 @@ from locust import HttpUser, task, between
 from random import randint
 
 class MyApiUser(HttpUser):
-    host = "http://localhost:8000"
+    host = "https://localhost:8000"
     wait_time = between(0.1,3)
 
     @task

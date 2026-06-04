@@ -123,6 +123,9 @@ def put_book(book_id, title, isbn, published_year, author_id):
 
 
 
+def patch_books(id=None, title=None, isbn=None, published_year=None, author_id=None):
+    pass
+
 def delete_book(id=None): 
 
     select_query = """

@@ -138,3 +138,6 @@ def put_author_handler(data, params):
         "status": "error",
         "message": "coundn't update book"
     }
+
+def patch_author_handler(data, params):
+    pass

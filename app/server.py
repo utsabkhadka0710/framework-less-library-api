@@ -28,6 +28,9 @@ router.add("DELETE","/books/<id>",books.delete_book_handler)
 router.add("PUT","/authors/<id>",authors.put_author_handler)
 router.add("PUT","/books/<id>",books.put_book_handler)
 
+router.add("PATCH","/authors/<id>",authors.patch_author_handler)
+router.add("PATCH","/books/<id>",books.patch_book_handler)
+
 class MyHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
@@ -97,6 +100,12 @@ class MyHandler(BaseHTTPRequestHandler):
 
         response_sender(self,status_code,response_data)
 
+
+    def do_PATCH(self):
+        logger.info(f"PATCH Request received: {self.path}")
+
+        path = parse_url(self.path)
+        data = read_body(self)
         
 
     def do_DELETE(self):

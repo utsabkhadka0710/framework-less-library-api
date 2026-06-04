@@ -76,7 +76,10 @@ def put_author(author_id, name, email):
         row = cur.fetchone()
         message = "Updated"
         return [row], message
+    
 
+def patch_author(author_id=None, name=None, email=None):
+    pass
 
 
 def delete_author(id=None):

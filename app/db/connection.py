@@ -13,6 +13,15 @@ db_config = {
     "port": os.getenv("DB_PORT")
 }
 
+def get_connection():
+    return psycopg.connect(
+    dbname = os.getenv("DB_NAME"),
+    user = os.getenv("DB_USER"),
+    password = os.getenv("DB_PASSWORD"),
+    host = os.getenv("DB_HOST"),
+    port=  os.getenv("DB_PORT")
+    )
+
 db_pool = ConnectionPool(
     conninfo="",
     kwargs= db_config,

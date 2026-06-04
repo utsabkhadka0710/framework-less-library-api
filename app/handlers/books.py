@@ -167,3 +167,7 @@ def put_book_handler(data, params):
         "status": "error",
         "message": "coundn't update book"
     }
+
+
+def patch_book_handler(data, params):
+    pass

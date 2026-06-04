@@ -126,13 +126,13 @@ Edit `.env` with your PostgreSQL credentials.
 **4. Run migrations**
 
 ```bash
-python migrations/migrate.py
+python -m migrations.migrate.py
 ```
 
 **5. (Optional) Seed the database**
 
 ```bash
-python seeds/seed.py
+python -m seeds.seed.py
 ```
 
 **6. Start the server**
