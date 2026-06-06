@@ -69,7 +69,6 @@ def get_books(title=None,isbn=None, author=None, year=None, sort=None, order="as
 
 def create_book(title, isbn, published_year, author_id):
     with get_cursor() as cur:
-        print("create book called")
         cur.execute(
             """INSERT INTO books (title, isbn, published_year, author_id)
             VALUES (%s, %s, %s, %s)
@@ -77,7 +76,6 @@ def create_book(title, isbn, published_year, author_id):
             (title, isbn, published_year, author_id)
         )
         new_book = cur.fetchone()
-        print(new_book)
         return new_book
 
 
@@ -85,11 +83,9 @@ def create_book(title, isbn, published_year, author_id):
 def put_book(book_id, title, isbn, published_year, author_id):
 
     if not get_books(id=book_id):
-        print("put book entered line 132")
         try:
-            print(create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id))
+            create_book(title=title,isbn=isbn,published_year=published_year,author_id=author_id)
             row = get_books(isbn=isbn)
-            print("inside put book try line 136: ",row)
             message = "Created"
             return row, message
         except Exception as e:
@@ -123,8 +119,55 @@ def put_book(book_id, title, isbn, published_year, author_id):
 
 
 
-def patch_books(id=None, title=None, isbn=None, published_year=None, author_id=None):
-    pass
+def patch_books(book_id=None, title=None, isbn=None, published_year=None, author_id=None):
+
+    if not get_books(id=book_id):
+        return None, "error"
+
+    base_query = """
+                UPDATE books
+                SET
+                """
+
+    set_clauses = []
+
+    params =[]
+    if title is not None:
+        set_clauses.append("title = %s")
+        params.append(title)
+
+    if isbn is not None:
+        set_clauses.append("isbn = %s")
+        params.append(isbn)
+
+    if published_year is not None:
+        set_clauses.append("published_year = %s")
+        params.append(published_year)
+    
+    if author_id is not None:
+        set_clauses.append("author_id = %s")
+        params.append(author_id)
+
+    if not set_clauses:
+        return get_books(id=book_id), "Updated"
+
+    params.append(book_id)
+    base_query += ",".join(set_clauses) + " FROM authors WHERE books.id = %s "
+    base_query += """
+                RETURNING 
+                    books.id, books.title,
+                    books.isbn, books.published_year,
+                    books.author_id, authors.name
+                """
+
+    with get_cursor() as cur:
+        cur.execute(query=base_query,params=params)
+
+        row = cur.fetchone()
+        message = "Updated"
+        return row, message
+
+
 
 def delete_book(id=None): 
 

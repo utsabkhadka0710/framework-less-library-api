@@ -60,7 +60,7 @@ def put_author(author_id, name, email):
             message = "Created"
             return [row], message
         except Exception as e:
-            return (),e
+            return None,e
         
     params = (name, email, author_id)
     query = """
@@ -79,7 +79,36 @@ def put_author(author_id, name, email):
     
 
 def patch_author(author_id=None, name=None, email=None):
-    pass
+
+    if not get_authors(id=author_id):
+        return None, "error"
+    
+    base_query = """
+                UPDATE authors
+                SET
+                """
+    set_clauses = []
+    params = []
+
+    if name is not None:
+        set_clauses.append("name = %s")
+        params.append(name)
+    if email is not None:
+        set_clauses.append("email = %s")
+        params.append(email)
+
+    if not set_clauses:
+        return get_authors(id=author_id), "Updated"
+    
+    params.append(author_id)
+    base_query += ",".join(set_clauses) + " WHERE id = %s" + " RETURNING id, name, email"
+
+    with get_cursor() as cur:
+        cur.execute(base_query,params)
+        row = cur.fetchone()
+        message = "Updated"
+
+        return row, message
 
 
 def delete_author(id=None):

@@ -50,7 +50,7 @@ class MyHandler(BaseHTTPRequestHandler):
             logger.error(f"Error GET: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        response_sender(self,status_code,response_data)
+        response_sender(self, status_code, response_data)
 
 
 
@@ -74,7 +74,7 @@ class MyHandler(BaseHTTPRequestHandler):
             logger.error(f"Error POST: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        response_sender(self,status_code,response_data)
+        response_sender(self, status_code, response_data)
 
 
 
@@ -89,24 +89,45 @@ class MyHandler(BaseHTTPRequestHandler):
         handler, params = router.resolve("PUT",path)
 
         try:
-            if handler:
+            if (not query_params) and handler:
                 status_code, response_data = handler(data, params)
             else: 
                 status_code, response_data = 404, {"error": "Not Found"}
+                if query_params:
+                    status_code, response_data = 400, {"status": "error", "message": "coundn't update book"}
 
         except Exception as e:
             logger.error(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal Server Error"}
 
-        response_sender(self,status_code,response_data)
+        response_sender(self, status_code, response_data)
+
+
 
 
     def do_PATCH(self):
         logger.info(f"PATCH Request received: {self.path}")
 
-        path = parse_url(self.path)
+        path, query_params = parse_url(self.path)
         data = read_body(self)
-        
+
+        handler, params = router.resolve("PATCH", path)
+
+        try:
+            if (not query_params) and handler:
+                status_code, response_data = handler(data,params)
+            else:
+                status_code, response_data = 404, {"error": "Not Found"}
+                if query_params:
+                    status_code, response_data = 400, {"status": "error", "message": "coundn't update book"}
+
+        except Exception as e:
+            logger.error(f"Error: {e}")
+            status_code, response_data = 500, {"error": "Internal Server Error"}
+
+        response_sender(self, status_code, response_data)
+
+
 
     def do_DELETE(self):
         logger.info(f"DELETE Request received: {self.path}")
@@ -125,12 +146,12 @@ class MyHandler(BaseHTTPRequestHandler):
             logger.error(f"Error: {e}")
             status_code, response_data = 500, {"error": "Internal server error"}
     
-        response_sender(self,status_code, response_data)
+        response_sender(self, status_code, response_data)
         
 
-PORT = int(os.getenv("PORT",8000))
-HOST = "0.0.0.0"
 def run():
+    PORT = int(os.getenv("PORT",8000))
+    HOST = "0.0.0.0"
     server_address = (HOST,PORT)
     httpd = ThreadingHTTPServer(server_address,MyHandler)
     logger.info(f"Server Running on {HOST}: {PORT}")
@@ -139,7 +160,7 @@ def run():
         httpd.serve_forever()
 
     except KeyboardInterrupt:
-        logger.warning("Server stopped \"http://localhost\" no more running!! (Keyboard Interrupt)")
+        logger.warning(f"Server stopped {HOST} no more running!! (Keyboard Interrupt)")
 
     finally:
         httpd.server_close()

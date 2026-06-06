@@ -7,7 +7,6 @@ from app.utils.formatter import format_authors
 
 logger = create_logger(name=__name__)
 
-print()
 
 def authors_handler(query, params=None):
 
@@ -104,11 +103,24 @@ def delete_author_handler(params):
 
 
 def put_author_handler(data, params):
-    id = params.get("id", None)
+    author_id = params.get("id", None)
+    body_id = data.get("id",None)
     name = data.get("name", None)
     email = data.get("email", None)
 
-    
+    if body_id is not None:
+        try:
+            if int(author_id) != int(body_id):
+                return 400, {
+                    "status": "error",
+                    "message": "id is unique and cannot be changed"
+                    }
+        except ValueError as e:
+            return 400, {
+                "status": "error",
+                "message": "Invalid ID format provided in request body"
+            }
+
     if not name or len(name)<2:
         return 400, {
             "status":"error",
@@ -122,7 +134,7 @@ def put_author_handler(data, params):
         }
     
     try:
-        row, message = queries.put_author(id, name, email)
+        row, message = queries.put_author(author_id, name, email)
         if row:
             updated_data = format_authors(row)
             return 200, {
@@ -132,12 +144,58 @@ def put_author_handler(data, params):
             }
 
     except Exception as e:
-        logger.info(f"Error: {e}")
+        logger.error(f"Error: {e}")
 
     return 400, {
         "status": "error",
-        "message": "coundn't update book"
+        "message": "coundn't update author"
     }
 
 def patch_author_handler(data, params):
-    pass
+    author_id = params.get("id",None)
+    body_id = data.get("id",None)
+    name = data.get("name",None)
+    email = data.get("email",None)
+
+
+    if body_id is not None:
+        try:
+            if int(author_id) != int(body_id):
+                return 400, {
+                    "status": "error",
+                    "message": "id is unique and cannot be changed"
+                    }
+        except ValueError as e:
+            return 400, {
+                "status": "error",
+                "message": "Invalid id format provided in request body"
+            }
+
+    if isinstance(name,str) and len(name)<2:
+        return 400, {
+            "status":"error",
+            "message": "name must be atleast 2 characters"
+        }
+    
+    if isinstance(email,str) and (not is_valid_email(email)):     
+        return 400,{
+            "status": "error",
+            "message": "enter a valid Email"
+        }
+        
+    try:
+        row, message = queries.patch_author(author_id=author_id, name=name, email=email)
+        if row:
+            updated_data = format_authors([row])
+            return 200, {
+                "status": "success",
+                "data": updated_data,
+                "message": message
+            }
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return 400, {
+        "status": "error",
+        "message": "couldn't update author"
+    }

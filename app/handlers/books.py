@@ -114,11 +114,24 @@ def delete_book_handler(params):
 
 def put_book_handler(data, params):
     book_id = params.get("id",None)
+    body_id = data.get("id",None)
     title = data.get("title",None)
     isbn = data.get("isbn",None)
     published_year = data.get("published_year",None)
     author_id = data.get("author_id", None)
 
+    if body_id is not None:
+        try:
+            if int(book_id) != int(body_id):
+                return 400, {
+                    "status": "error",
+                    "message": "id is unique and cannot be changed"
+                    }
+        except ValueError as e:
+            return 400, {
+                "status": "error",
+                "message": "Invalid id format provided in request body"
+            }
     
     if not title or len(title)<1 :
             return 400, {
@@ -170,4 +183,69 @@ def put_book_handler(data, params):
 
 
 def patch_book_handler(data, params):
-    pass
+    book_id = params.get("id",None)
+    body_id = data.get("id",None)
+    title = data.get("title",None)
+    isbn = data.get("isbn",None)
+    published_year = data.get("published_year",None)
+    author_id = data.get("author_id", None)
+
+    if body_id is not None:
+        try:
+            if int(book_id) != int(body_id):
+                return 400, {
+                    "status": "error",
+                    "message": "id is unique and cannot be changed"
+                    }
+        except ValueError as e:
+            return 400, {
+                "status": "error",
+                "message": "Invalid id format provided in request body"
+            }
+        
+    if not get_authors(id=author_id):
+        return 400, {
+            "status": "error",
+            "message": "author doesn't exist"
+        }
+    
+    if isinstance(title,str) and len(title)<1 :
+        return 400, {
+            "status": "error",
+            "message": "title must be atleast 1 character"
+        }
+    
+    if isinstance(isbn,str) and not is_valid_isbn(isbn):
+        return 400, {
+            "status": "invalid isbn"
+        }
+    
+    if isinstance(published_year,int|str) and not is_valid_year(published_year):
+        return 400, {
+            "status": "error",
+            "message": "invalid published_year"
+        }
+    
+    if isinstance(author_id,int|str) and (not author_id):
+        return 400, {
+            "status": "error",
+            "message": "author_id is required"
+        }
+
+    try: 
+        row, message = queries.patch_books(book_id=book_id, title=title, isbn=isbn, published_year=published_year, author_id=author_id)
+        if row:
+            updated_data = format_books([row])
+            return 200, {
+                "status": "success",
+                "data": updated_data,
+                "message": message
+            }
+    
+    except Exception as e:
+        logger.error(f"Error: {e}")
+
+    return 400, {
+        "status": "error",
+        "message": "coundn't update book"
+    }
