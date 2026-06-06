@@ -46,4 +46,3 @@ class Router:
                     return route["handler"], params
                                 
         return None, {}
-            
