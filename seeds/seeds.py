@@ -656,19 +656,11 @@ query = """TRUNCATE TABLE books, authors RESTART IDENTITY CASCADE;
       ('Kaddish and Other Poems', '0872860418', 1961, 93);
 """
 
-from app.db.connection import get_connection
+from app.db.connection import get_cursor, db_pool
 
 def main():
-    conn = get_connection()
-    cur = conn.cursor()
-    
-    try:
-      cur.execute(query=query)
-    except:
-       raise conn.rollback
-    finally:
-       cur.close()
-       conn.close()
+    with get_cursor() as cur:
+        cur.execute(query=query)
 
 if __name__ == "__main__":
     from app.utils.logger import create_logger
@@ -679,3 +671,6 @@ if __name__ == "__main__":
         logger.info("Successfully planted seed data into database!")
     except Exception as e:
         logger.error(f"Error occured during seed data planting: {e}")
+    finally:
+        logger.info("Clossing connection pool...")
+        db_pool.close()
